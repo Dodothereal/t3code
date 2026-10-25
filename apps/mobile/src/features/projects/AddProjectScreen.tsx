@@ -659,11 +659,11 @@ export function AddProjectSourceScreen(props: { readonly environmentId?: string 
   );
 }
 
-function getActiveRouteKey(navigation: {
+function getActiveRoute(navigation: {
   getState: () => NavigationState<ParamListBase> | undefined;
-}): string | undefined {
+}) {
   const state = navigation.getState();
-  return state?.routes[state.index]?.key;
+  return state?.routes[state.index];
 }
 
 function openNewTaskDraft(
@@ -678,11 +678,19 @@ function openNewTaskDraft(
     cloning?: "1";
     draftId?: string;
   },
-  originRouteKey: string | undefined,
+  originRoute: NavigationState<ParamListBase>["routes"][number] | undefined,
 ) {
   const state = navigation.getState();
-  // Async creation can finish after this flow was dismissed or another route opened.
-  if (!state || state.routes[state.index]?.key !== originRouteKey) return;
+  // Warm links can replace route params without changing the native controller key.
+  const activeRoute = state?.routes[state.index];
+  if (
+    !state ||
+    !originRoute ||
+    activeRoute?.key !== originRoute.key ||
+    activeRoute.name !== originRoute.name ||
+    activeRoute.params !== originRoute.params
+  )
+    return;
   const activeRoutes = state.routes.slice(0, state.index + 1);
   const threadIndex = activeRoutes.findLastIndex((route) => route.name === "Thread");
   const flowIndex = activeRoutes.findIndex(
@@ -714,7 +722,7 @@ function useCreateProject(environment: EnvironmentOption | null) {
   const createProject = useAtomCommand(projectEnvironment.create, { reportFailure: false });
   const projects = useProjects();
 
-  return async (workspaceRoot: string, originRouteKey = getActiveRouteKey(navigation)) => {
+  return async (workspaceRoot: string, originRoute = getActiveRoute(navigation)) => {
     if (
       !environment ||
       !canCreateProjectInEnvironment(environment.connectionState) ||
@@ -741,7 +749,7 @@ function useCreateProject(environment: EnvironmentOption | null) {
           projectId: existing.id,
           title: existing.title,
         },
-        originRouteKey,
+        originRoute,
       );
       return;
     }
@@ -779,7 +787,7 @@ function useCreateProject(environment: EnvironmentOption | null) {
         projectId,
         title: inferProjectTitleFromPath(workspaceRoot),
       },
-      originRouteKey,
+      originRoute,
     );
     return result;
   };
@@ -1063,7 +1071,7 @@ export function AddProjectNewScreen(props: { readonly environmentId?: string | s
   const submittingRef = useRef(false);
   const submit = async () => {
     if (!environment || trimmedName.length === 0 || submittingRef.current) return;
-    const originRouteKey = getActiveRouteKey(navigation);
+    const originRoute = getActiveRoute(navigation);
     submittingRef.current = true;
     setError(null);
     setIsSubmitting(true);
@@ -1121,7 +1129,7 @@ export function AddProjectNewScreen(props: { readonly environmentId?: string | s
         projectId,
         title: trimmedName,
       },
-      originRouteKey,
+      originRoute,
     );
   };
 
@@ -1364,7 +1372,7 @@ export function AddProjectDestinationScreen(props: {
       return;
     }
 
-    const originRouteKey = getActiveRouteKey(navigation);
+    const originRoute = getActiveRoute(navigation);
     setIsSubmitting(true);
     if (environment.supportsCloneTracking) {
       const projectId = ProjectId.make(uuidv4());
@@ -1406,7 +1414,7 @@ export function AddProjectDestinationScreen(props: {
                   )
                 : {}),
             },
-            originRouteKey,
+            originRoute,
           );
         }
       }
@@ -1423,7 +1431,7 @@ export function AddProjectDestinationScreen(props: {
     if (AsyncResult.isFailure(cloneResult)) {
       setError(errorMessage(Cause.squash(cloneResult.cause)));
     } else {
-      const createResult = await createProject(cloneResult.value.cwd, originRouteKey);
+      const createResult = await createProject(cloneResult.value.cwd, originRoute);
       if (createResult && AsyncResult.isFailure(createResult)) {
         setError(errorMessage(Cause.squash(createResult.cause)));
       }

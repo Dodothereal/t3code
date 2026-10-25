@@ -326,6 +326,7 @@ function mountProjectFlow(
     flowRoutes: current.routes.slice(underlyingRoutes.length),
     getState: () => current,
     back: () => apply(StackActions.pop()),
+    setParams: (params: object) => apply(CommonActions.setParams(params)),
     push: (name: string) => apply(StackActions.push(name)),
   };
 }
@@ -532,6 +533,23 @@ describe("local project navigation", () => {
     await submission;
 
     expect(state.projects).toEqual(["/tmp/t3-mobile-audit-fixture"]);
+    expect(navigation.getState()).toEqual(remaining);
+    expect(state.dispatch).not.toHaveBeenCalled();
+  });
+
+  it("does not replace a warm-linked flow sharing the original route key", async () => {
+    const { created, projected, submit } = setup();
+    const navigation = mountProjectFlow(false);
+    const submission = submit();
+    created.resolve(AsyncResult.success(undefined));
+    await created.promise;
+    const originalKey = navigation.getState().routes.at(-1)!.key;
+    navigation.setParams({ environmentId: "other-environment" });
+    const remaining = navigation.getState();
+    expect(remaining.routes.at(-1)!.key).toBe(originalKey);
+    projected.resolve({ environmentId: "environment", id: "project" });
+    await submission;
+
     expect(navigation.getState()).toEqual(remaining);
     expect(state.dispatch).not.toHaveBeenCalled();
   });
