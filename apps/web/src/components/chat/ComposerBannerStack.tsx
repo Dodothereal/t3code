@@ -185,7 +185,11 @@ function ShelfRow({ item }: { readonly item: ComposerBannerStackItem }) {
           {item.description ? (
             <NoticeText
               detailsLabel="Show notice details"
-              className="w-0 min-w-0 grow truncate text-muted-foreground @max-[400px]:sr-only"
+              className={cn(
+                "w-0 min-w-0 grow truncate text-muted-foreground",
+                // What the agent is working toward stays visible; notices keep only their title.
+                item.group !== "activity" && "@max-[400px]:sr-only",
+              )}
             >
               {item.description}
             </NoticeText>
