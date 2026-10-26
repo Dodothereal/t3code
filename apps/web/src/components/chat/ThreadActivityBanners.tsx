@@ -63,22 +63,25 @@ export function goalBannerItem(input: {
     group: "activity",
     icon: <TargetIcon />,
     title: presentation.title,
-    // Narrow shelves drop the usage label; it stays reachable in the details popover.
+    // The row shows the usage on the right, shortened when tight; the details popover has all of it.
     description:
       presentation.usage === null ? (
         presentation.objective
       ) : (
         <>
           {presentation.objective}
-          <span className="@min-[640px]:hidden"> · {presentation.usage}</span>
+          <span className="in-data-composer-banner-row:hidden"> · {presentation.usage}</span>
         </>
       ),
     actions:
       isWorking && presentation.usage === null ? undefined : (
         <>
           {presentation.usage === null ? null : (
-            <span className="px-2 whitespace-nowrap text-muted-foreground tabular-nums @max-[640px]:hidden">
-              {presentation.usage}
+            <span className="px-2 whitespace-nowrap text-muted-foreground tabular-nums @max-[480px]:hidden">
+              <span className="@max-[640px]:hidden">{presentation.usage}</span>
+              <span className="@min-[641px]:hidden">
+                {presentation.tokens ?? presentation.usage}
+              </span>
             </span>
           )}
           {!isWorking && presentation.canResume ? (

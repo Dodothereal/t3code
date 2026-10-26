@@ -364,6 +364,8 @@ export interface ProviderGoalPresentation {
   readonly title: string;
   readonly objective: string;
   readonly usage: string | null;
+  /** The token count alone, for tight layouts: "412K / 2M", or "412K tokens" without a budget. */
+  readonly tokens: string | null;
   readonly canResume: boolean;
 }
 
@@ -387,13 +389,13 @@ export function presentProviderGoal(
   working: boolean,
 ): ProviderGoalPresentation {
   const usage: Array<string> = [];
-  if (goal.tokensUsed !== undefined && goal.tokensUsed > 0) {
-    usage.push(
-      goal.tokenBudget == null
+  const tokens =
+    goal.tokensUsed === undefined || goal.tokensUsed <= 0
+      ? null
+      : goal.tokenBudget == null
         ? `${formatGoalTokens(goal.tokensUsed)} tokens`
-        : `${formatGoalTokens(goal.tokensUsed)} / ${formatGoalTokens(goal.tokenBudget)} tokens`,
-    );
-  }
+        : `${formatGoalTokens(goal.tokensUsed)} / ${formatGoalTokens(goal.tokenBudget)}`;
+  if (tokens !== null) usage.push(goal.tokenBudget == null ? tokens : `${tokens} tokens`);
   if (goal.timeUsedSeconds !== undefined && goal.timeUsedSeconds >= 60) {
     usage.push(formatDuration(goal.timeUsedSeconds * 1_000));
   }
@@ -404,6 +406,7 @@ export function presentProviderGoal(
     title: goal.status === "active" && !working ? "Goal set" : PROVIDER_GOAL_TITLES[goal.status],
     objective: goal.objective,
     usage: usage.length === 0 ? null : usage.join(" · "),
+    tokens,
     canResume: goal.status !== "active" && goal.status !== "complete",
   };
 }

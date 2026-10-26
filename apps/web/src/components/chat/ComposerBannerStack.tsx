@@ -181,14 +181,20 @@ function ShelfRow({ item }: { readonly item: ComposerBannerStackItem }) {
         </ComposerBanner.Icon>
         <ComposerBanner.Content className="whitespace-nowrap">
           <NoticeText
-            detailsLabel="Show title details"
+            detailsLabel={
+              typeof item.title === "string" ? `Show details: ${item.title}` : "Show title details"
+            }
             className="min-w-0 truncate font-medium leading-7 sm:leading-6"
           >
             {item.title}
           </NoticeText>
           {item.description ? (
             <NoticeText
-              detailsLabel="Show notice details"
+              detailsLabel={
+                typeof item.title === "string"
+                  ? `Show details: ${item.title}`
+                  : "Show notice details"
+              }
               className={cn(
                 "w-0 min-w-0 grow truncate",
                 // Muted text falls under 4.5:1 on the light problem tints.
