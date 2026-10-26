@@ -13,6 +13,7 @@ import { GitBranchIcon, MessageCircleIcon, ShieldQuestionIcon, TargetIcon } from
 import { Fragment } from "react";
 import { cn } from "~/lib/utils";
 import { Button, InlineButton } from "../ui/button";
+import { Popover, PopoverPopup, PopoverTrigger } from "../ui/popover";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import type { ComposerBannerStackItem } from "./ComposerBannerStack";
 
@@ -63,7 +64,8 @@ export function goalBannerItem(input: {
     group: "activity",
     icon: <TargetIcon />,
     title: presentation.title,
-    // The row shows the usage on the right, shortened when tight; the details popover has all of it.
+    // A narrow paused row hides the usage button for Resume and Clear; its details popover
+    // carries the usage instead.
     description:
       presentation.usage === null ? (
         presentation.objective
@@ -77,12 +79,21 @@ export function goalBannerItem(input: {
       isWorking && presentation.usage === null ? undefined : (
         <>
           {presentation.usage === null ? null : (
-            <span className="px-2 whitespace-nowrap text-muted-foreground tabular-nums @max-[480px]:hidden">
-              <span className="@max-[640px]:hidden">{presentation.usage}</span>
-              <span className="@min-[641px]:hidden">
-                {presentation.tokens ?? presentation.usage}
-              </span>
-            </span>
+            <Popover>
+              <PopoverTrigger
+                openOnHover
+                render={<InlineButton tone="muted" />}
+                className={cn("mx-2", !isWorking && "@max-[480px]:hidden")}
+                aria-label={`Goal usage: ${presentation.usage}`}
+              >
+                <span className="font-normal tabular-nums">
+                  {presentation.tokens ?? presentation.usage}
+                </span>
+              </PopoverTrigger>
+              <PopoverPopup tooltipStyle side="top">
+                {presentation.usage}
+              </PopoverPopup>
+            </Popover>
           )}
           {!isWorking && presentation.canResume ? (
             <Button
