@@ -64,26 +64,21 @@ export function goalBannerItem(input: {
     group: "activity",
     icon: <TargetIcon />,
     title: presentation.title,
-    // A narrow paused row hides the usage button for Resume and Clear; its details popover
-    // carries the usage instead.
+    // A paused goal's Resume and Clear need the room, so its usage joins the objective, where
+    // the details popover can show it whole.
     description:
-      presentation.usage === null ? (
-        presentation.objective
-      ) : (
-        <>
-          {presentation.objective}
-          <span className="in-data-composer-banner-row:hidden"> · {presentation.usage}</span>
-        </>
-      ),
+      isWorking || presentation.usage === null
+        ? presentation.objective
+        : `${presentation.objective} · ${presentation.usage}`,
     actions:
       isWorking && presentation.usage === null ? undefined : (
         <>
-          {presentation.usage === null ? null : (
+          {isWorking && presentation.usage !== null ? (
             <Popover>
               <PopoverTrigger
                 openOnHover
                 render={<InlineButton tone="muted" />}
-                className={cn("mx-2", !isWorking && "@max-[480px]:hidden")}
+                className="mx-2"
                 aria-label={`Goal usage: ${presentation.usage}`}
               >
                 <span className="font-normal tabular-nums">
@@ -94,7 +89,7 @@ export function goalBannerItem(input: {
                 {presentation.usage}
               </PopoverPopup>
             </Popover>
-          )}
+          ) : null}
           {!isWorking && presentation.canResume ? (
             <Button
               size="xs"
