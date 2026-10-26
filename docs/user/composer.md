@@ -260,6 +260,26 @@ row above the composer shows the goal and its progress.
   stop the turn only when it is working on the goal. Other goal commands wait for
   the turn to end.
 
+## Chat statistics
+
+Enable **Settings → General → Show chat statistics** to show a compact row below
+the composer. It is off by default. The row shows turns, model steps, model time,
+average time to first output, output tokens per second, cache hits, and input and
+output tokens when available.
+
+Values marked `~` are estimates from the thread's recorded activity. Timing can
+include provider and transport overhead; it is not an API benchmark. Recorded
+tool and approval time is excluded from model-time estimates. Missing measurements
+show a dash. When token usage is not reported, visible text supplies rough output
+token and speed estimates. Input marked `+` counts only visible user prompts;
+actual input can be higher because it includes context and system instructions.
+Cache hits require reported counters. Speed averages only output with matching
+counts and timing; it stays visible during tool calls and excludes recorded tool
+and approval time. The activity indicator explains when generation is paused.
+The info button explains estimates and
+incomplete history. The row stays on one line and scrolls horizontally in narrow
+windows.
+
 ## Context in your message
 
 Context you attach lands where your cursor is, as a chip inside your text: a terminal excerpt,

@@ -463,6 +463,14 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["composer rich text tiptap bold italic markdown styled wysiwyg"],
   },
   {
+    id: "composer-statistics",
+    title: "Show chat statistics",
+    to: "/settings/general",
+    searchTerms: [
+      "composer footer stats tokens timing speed ttft first token per second cache input output turns steps llm",
+    ],
+  },
+  {
     id: "composer-collapse",
     title: "Collapse composer on scroll",
     to: "/settings/general",

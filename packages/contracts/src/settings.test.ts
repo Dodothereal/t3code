@@ -198,6 +198,29 @@ describe("ClientSettings notifications", () => {
   });
 });
 
+describe("ClientSettings composer statistics", () => {
+  it("keeps statistics off when existing settings omit the preference", () => {
+    expect(decodeClientSettings({ timestampFormat: "12-hour" })).toMatchObject({
+      composerStatsEnabled: false,
+      timestampFormat: "12-hour",
+    });
+    expect(decodeClientSettingsPatch({})).not.toHaveProperty("composerStatsEnabled");
+  });
+
+  it.each([true, false])("round-trips the explicit %s preference", (composerStatsEnabled) => {
+    const patch = decodeClientSettingsPatch({ composerStatsEnabled });
+    const encoded = encodeClientSettings(decodeClientSettings(patch));
+
+    expect(patch).toEqual({ composerStatsEnabled });
+    expect(decodeClientSettings(encoded).composerStatsEnabled).toBe(composerStatsEnabled);
+  });
+
+  it("rejects non-boolean preferences", () => {
+    expect(() => decodeClientSettings({ composerStatsEnabled: "true" })).toThrow();
+    expect(() => decodeClientSettingsPatch({ composerStatsEnabled: "true" })).toThrow();
+  });
+});
+
 describe("ClientSettings quit confirmation", () => {
   it.each([
     [true, "hold"],

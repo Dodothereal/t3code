@@ -314,6 +314,7 @@ import {
   deriveLatestContextWindowSnapshot,
   latestProviderTurnTokenUsage,
 } from "../lib/contextWindow";
+import { ThreadStatsFooter } from "./chat/ThreadStatsFooter";
 import {
   MOBILE_COMPOSER_VIEW_TRANSITION_NAME,
   MOBILE_DRAFT_HEADLINE_VIEW_TRANSITION_NAME,
@@ -3699,6 +3700,12 @@ export default function ChatView(props: ChatViewProps) {
                         </div>
                       </div>
                     </ComposerSurface.Shell>
+                    {settings.composerStatsEnabled && routeThreadDetailRef !== null ? (
+                      <ThreadStatsFooter
+                        key={`${routeThreadDetailRef.environmentId}:${routeThreadDetailRef.threadId}`}
+                        threadRef={routeThreadDetailRef}
+                      />
+                    ) : null}
                     <div
                       aria-hidden
                       className="h-[calc(env(safe-area-inset-bottom)+1rem)] sm:h-[calc(env(safe-area-inset-bottom)+1.25rem)]"
