@@ -58,11 +58,13 @@ export function goalBannerItem(input: {
 }): ComposerBannerStackItem {
   const { isWorking, onSendCommand } = input;
   const presentation = presentProviderGoal(input.goal, isWorking);
-  // The token count opens the full usage, unless the full usage is all there is.
+  // The token count opens the full usage, unless the full usage is all there is. A narrow
+  // paused row gives its room to Resume and Clear and moves the usage into the objective.
+  const usageClassName = cn("mx-2", !isWorking && "@max-[480px]:hidden");
   const usageLabel =
-    !isWorking || presentation.usage === null ? null : presentation.tokens === null ||
+    presentation.usage === null ? null : presentation.tokens === null ||
       presentation.tokens === presentation.usage ? (
-      <span className="mx-2 whitespace-nowrap text-muted-foreground tabular-nums">
+      <span className={cn(usageClassName, "whitespace-nowrap text-muted-foreground tabular-nums")}>
         {presentation.usage}
       </span>
     ) : (
@@ -70,7 +72,7 @@ export function goalBannerItem(input: {
         <PopoverTrigger
           openOnHover
           render={<InlineButton tone="muted" />}
-          className="mx-2"
+          className={usageClassName}
           aria-label={`Goal usage: ${presentation.usage}`}
         >
           <span className="font-normal tabular-nums">{presentation.tokens}</span>
@@ -86,12 +88,19 @@ export function goalBannerItem(input: {
     group: "activity",
     icon: <TargetIcon />,
     title: presentation.title,
-    // A paused goal's Resume and Clear need the room, so its usage joins the objective, where
-    // the details popover can show it whole.
+    // In the row this shows only where the usage button hides; the details popover always has it.
     description:
-      isWorking || presentation.usage === null
-        ? presentation.objective
-        : `${presentation.objective} · ${presentation.usage}`,
+      isWorking || presentation.usage === null ? (
+        presentation.objective
+      ) : (
+        <>
+          {presentation.objective}
+          <span className="in-data-composer-banner-row:hidden in-data-composer-banner-row:@max-[480px]:inline">
+            {" "}
+            · {presentation.usage}
+          </span>
+        </>
+      ),
     actions:
       usageLabel === null && isWorking ? undefined : (
         <>
