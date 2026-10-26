@@ -194,10 +194,15 @@ export function useSystemComposerBanners(input: SystemComposerBannersInput) {
         unavailableConnection.phase === "reconnecting");
     const suppressUnavailableBanner =
       environmentReconnecting && (updateRunning || !reconnectWarningGraceElapsed);
-    if (activeEnvironmentUnavailableState && unavailableConnection && !suppressUnavailableBanner) {
+    const showUnavailableBanner =
+      activeEnvironmentUnavailableState !== null &&
+      unavailableConnection !== null &&
+      !suppressUnavailableBanner;
+    if (showUnavailableBanner) {
       items.push({
         id: `environment-unavailable:${activeEnvironmentUnavailableState.environmentId}`,
         variant: unavailableConnection.phase === "error" ? "error" : "warning",
+        group: "environment",
         icon: <WifiOffIcon />,
         title: `${activeEnvironmentUnavailableState.label} is ${environmentReconnecting ? "reconnecting" : "offline"}`,
         description: activeEnvironment ? (
@@ -226,8 +231,9 @@ export function useSystemComposerBanners(input: SystemComposerBannersInput) {
     if (
       !automaticEnvironment &&
       serverUpdateEnvironmentId &&
+      // A server that cannot be reached cannot be updated either; the offer returns on reconnect.
       (serverUpdateState.status === "idle"
-        ? showVersionMismatchBanner
+        ? showVersionMismatchBanner && !showUnavailableBanner
         : !serverUpdateFailureDismissed)
     ) {
       const updateInProgress = serverUpdateState.status === "running";
@@ -235,7 +241,7 @@ export function useSystemComposerBanners(input: SystemComposerBannersInput) {
       items.push({
         id: `server-version:${serverUpdateEnvironmentId}`,
         variant: updateFailed ? "error" : "default",
-        priority: updateInProgress ? "urgent" : "notice",
+        group: "environment",
         icon: <ComposerServerUpdateIcon status={serverUpdateState.status} />,
         title:
           updateInProgress || updateFailed ? (

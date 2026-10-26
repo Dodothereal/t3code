@@ -28,7 +28,6 @@ export function childInputBannerItem(input: {
   return {
     id: `child-input:${first.id}`,
     variant: "info",
-    priority: "activity",
     icon: first.hasPendingApprovals ? <ShieldQuestionIcon /> : <MessageCircleIcon />,
     title: childThreadInputsTitle(childThreadInputs),
     description: childThreadInputs.map((child, index) => (
@@ -61,33 +60,38 @@ export function goalBannerItem(input: {
   return {
     id: `goal:${input.threadId}`,
     variant: "default",
-    priority: "activity",
+    group: "activity",
     icon: <TargetIcon />,
-    title:
-      presentation.usage === null
-        ? presentation.title
-        : `${presentation.title} · ${presentation.usage}`,
+    title: presentation.title,
     description: presentation.objective,
-    actions: isWorking ? undefined : (
-      <>
-        {presentation.canResume ? (
-          <Button
-            size="xs"
-            variant="ghost"
-            onClick={() => void onSendCommand("/goal resume", "Failed to resume goal.")}
-          >
-            Resume
-          </Button>
-        ) : null}
-        <Button
-          size="xs"
-          variant="ghost"
-          onClick={() => void onSendCommand("/goal clear", "Failed to clear goal.")}
-        >
-          Clear
-        </Button>
-      </>
-    ),
+    actions:
+      isWorking && presentation.usage === null ? undefined : (
+        <>
+          {presentation.usage === null ? null : (
+            <span className="px-1 whitespace-nowrap text-muted-foreground tabular-nums @max-[520px]:hidden">
+              {presentation.usage}
+            </span>
+          )}
+          {!isWorking && presentation.canResume ? (
+            <Button
+              size="xs"
+              variant="ghost"
+              onClick={() => void onSendCommand("/goal resume", "Failed to resume goal.")}
+            >
+              Resume
+            </Button>
+          ) : null}
+          {isWorking ? null : (
+            <Button
+              size="xs"
+              variant="ghost"
+              onClick={() => void onSendCommand("/goal clear", "Failed to clear goal.")}
+            >
+              Clear
+            </Button>
+          )}
+        </>
+      ),
   };
 }
 
@@ -105,7 +109,7 @@ export function backgroundWorkBannerItem(input: {
   return {
     id: `background-work:${input.threadId}`,
     variant: "default",
-    priority: "activity",
+    group: "activity",
     icon: (
       <span
         className={cn(

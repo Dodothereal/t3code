@@ -1,5 +1,5 @@
 import { CheckIcon, CircleDotIcon, CircleIcon, ListTodoIcon } from "lucide-react";
-import { memo, type ComponentProps } from "react";
+import { memo } from "react";
 
 import { formatDuration } from "../../session-logic";
 import { cn } from "~/lib/utils";
@@ -100,22 +100,18 @@ function TaskSummary({
   );
 }
 
-export const ComposerTasksBadge = memo(function ComposerTasksBadge({
+function ComposerTasksBadge({
   expanded,
   onToggle,
-  placement = "tab",
   progress,
   steps,
 }: {
   readonly expanded: boolean;
   readonly onToggle: () => void;
-  readonly placement?: "inline" | "tab";
   readonly progress: ComposerTasksProgress;
   readonly steps: readonly ComposerTaskStep[];
 }) {
-  if (progress.totalSteps <= 0) return null;
-
-  const row = (
+  return (
     <ComposerBanner.Row
       render={<button type="button" />}
       aria-expanded={expanded}
@@ -127,14 +123,7 @@ export const ComposerTasksBadge = memo(function ComposerTasksBadge({
       <TaskSummary expanded={expanded} progress={progress} steps={steps} />
     </ComposerBanner.Row>
   );
-  return placement === "inline" ? (
-    row
-  ) : (
-    <ComposerBanner.Root density="comfortable" data-composer-shoulder-tab>
-      {row}
-    </ComposerBanner.Root>
-  );
-});
+}
 
 export const ComposerTasksContent = memo(function ComposerTasksContent({
   expanded,
@@ -155,12 +144,11 @@ export const ComposerTasksContent = memo(function ComposerTasksContent({
       <ComposerTasksBadge
         expanded={expanded}
         onToggle={onToggle}
-        placement="inline"
         progress={progress}
         steps={steps}
       />
       {expanded ? (
-        <ComposerBanner.Scroll data-composer-tasks-scroll="true">
+        <ComposerBanner.Scroll className="max-h-48" data-composer-tasks-scroll="true">
           <ComposerBanner.Children
             render={<ul role="list" />}
             aria-label={`Task list. ${progress.completedSteps} of ${progress.totalSteps} complete.`}
@@ -217,20 +205,5 @@ export const ComposerTasksContent = memo(function ComposerTasksContent({
         </ComposerBanner.Scroll>
       ) : null}
     </div>
-  );
-});
-
-export const ComposerTasksDrawer = memo(function ComposerTasksDrawer({
-  onCollapse,
-  ...props
-}: Omit<ComponentProps<typeof ComposerTasksContent>, "expanded" | "onToggle"> & {
-  readonly onCollapse: () => void;
-}) {
-  return (
-    <ComposerBanner.Attachment>
-      <ComposerBanner.Root>
-        <ComposerTasksContent {...props} expanded onToggle={onCollapse} />
-      </ComposerBanner.Root>
-    </ComposerBanner.Attachment>
   );
 });
