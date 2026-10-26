@@ -8,6 +8,7 @@ import { Atom } from "effect/reactivity";
 import { connectionAtomRuntime } from "../connection/runtime";
 import {
   pullRequestListHead,
+  pullRequestStatKey,
   type PullRequestListPages,
 } from "../features/pull-requests/pullRequestList";
 
@@ -25,10 +26,6 @@ export const pullRequestListPagesFamily = Atom.family((_key: string) =>
 export const pullRequestListStatsFamily = Atom.family((_environmentId: string) =>
   Atom.make<ReadonlyMap<string, PullRequestDiffStat>>(new Map()).pipe(Atom.setIdleTTL(5 * 60_000)),
 );
-
-export const pullRequestStatKey = (
-  row: Pick<PullRequestDiffStat, "projectId" | "repository" | "number">,
-) => `${row.projectId}:${row.repository}:${row.number}`;
 
 export const composerPullRequests = createPullRequestEnvironmentAtoms(connectionAtomRuntime, {
   list: (target, value, registry) =>

@@ -11,7 +11,6 @@ import {
   pullRequestListPagesFamily,
   pullRequestListPagesKey,
   pullRequestListStatsFamily,
-  pullRequestStatKey as statKey,
 } from "../../state/pull-requests";
 import {
   appendPullRequestListPage,
@@ -19,7 +18,9 @@ import {
   nextPullRequestListInput,
   pullRequestListHead,
   pullRequestListKey,
+  pullRequestStatKey as statKey,
   scopedPullRequestListKey,
+  withShownPullRequestStats,
   type EnvironmentPullRequestListEntry,
   type PullRequestListPages,
 } from "./pullRequestList";
@@ -209,14 +210,16 @@ export function usePullRequestList(targets: readonly ListTarget[]) {
   );
   const visibleRows =
     visible.key === scopeKey && visible.rows.length ? visible.rows : data.entries.slice(0, 8);
-  // Decided on the rows without the stats below, so a cached answer shown offline does not
-  // unmount the query that holds it.
-  const unstatted = new Map(data.entries.map((row) => [scopedPullRequestListKey(row), row]));
+  // Visible rows carry the cached-answer overlay below. Decide which still need stats on the rows
+  // without it, so a cached answer shown offline does not unmount the query that holds it.
+  const withoutCachedOverlay = new Map(
+    data.entries.map((row) => [scopedPullRequestListKey(row), row]),
+  );
   const statsKey = JSON.stringify(
     targets.flatMap(({ environmentId }) => {
       const refs = visibleRows
         .filter((row) => {
-          const base = unstatted.get(scopedPullRequestListKey(row)) ?? row;
+          const base = withoutCachedOverlay.get(scopedPullRequestListKey(row)) ?? row;
           return row.environmentId === environmentId && base.additions + base.deletions === 0;
         })
         .map(({ projectId, host, repository, number }) => ({
@@ -241,21 +244,16 @@ export function usePullRequestList(targets: readonly ListTarget[]) {
   const counts = useAtomValue(statsAtom);
   // Server answers land in pullRequestListStatsFamily; these cover a cached answer, which is
   // all an offline environment has.
-  const shownStats = new Map(
-    counts.flatMap(({ environmentId, result }) =>
-      AsyncResult.isSuccess(result)
-        ? result.value.stats.map((row) => [`${environmentId}:${statKey(row)}`, row] as const)
-        : [],
-    ),
+  const entries = useMemo(
+    () =>
+      withShownPullRequestStats(
+        data.entries,
+        counts.flatMap(({ environmentId, result }) =>
+          AsyncResult.isSuccess(result) ? [{ environmentId, stats: result.value.stats }] : [],
+        ),
+      ),
+    [data.entries, counts],
   );
-  const entries = shownStats.size
-    ? data.entries.map((entry) => {
-        const stat = shownStats.get(`${entry.environmentId}:${statKey(entry)}`);
-        return stat && entry.additions + entry.deletions === 0
-          ? { ...entry, additions: stat.additions, deletions: stat.deletions }
-          : entry;
-      })
-    : data.entries;
 
   const updateEntry = useCallback(
     (entry: EnvironmentPullRequestListEntry, patch: Partial<EnvironmentPullRequestListEntry>) => {
@@ -292,7 +290,10 @@ export function usePullRequestList(targets: readonly ListTarget[]) {
       }),
     [sources],
   );
-  const listing = { ...data, entries, errors: [...data.errors, ...errors] };
+  const listing = useMemo(
+    () => ({ ...data, entries, errors: [...data.errors, ...errors] }),
+    [data, entries, errors],
+  );
   return {
     data: listing,
     entries,

@@ -19,6 +19,7 @@ import {
   pullRequestListInput,
   scopedPullRequestListKey,
   pullRequestListRowsAreEqual,
+  withShownPullRequestStats,
   withoutScratchProjectScope,
 } from "./pullRequestList";
 
@@ -385,5 +386,42 @@ describe("pullRequestFilterChoices", () => {
     });
     expect(rows).toHaveLength(100);
     expect(rows[50]).toBe("label-from-host");
+  });
+});
+
+describe("shown PR diff stats", () => {
+  const cups = EnvironmentId.make("cups");
+  const stat = (number: number, additions: number, deletions: number) => ({
+    projectId: "project" as PullRequestListEntry["projectId"],
+    repository: "org/repo",
+    number,
+    additions,
+    deletions,
+  });
+  const rows = [
+    { ...entry(1), environmentId: cups },
+    { ...entry(2, { additions: 4, deletions: 1 }), environmentId: cups },
+  ];
+
+  it("keeps the same list when the answers change no row", () => {
+    expect(withShownPullRequestStats(rows, [])).toBe(rows);
+    expect(withShownPullRequestStats(rows, [{ environmentId: cups, stats: [stat(1, 0, 0)] }])).toBe(
+      rows,
+    );
+    expect(withShownPullRequestStats(rows, [{ environmentId: cups, stats: [stat(2, 9, 9)] }])).toBe(
+      rows,
+    );
+  });
+
+  it("fills only rows without stats, in their own environment", () => {
+    const filled = withShownPullRequestStats(rows, [
+      { environmentId: EnvironmentId.make("mbp"), stats: [stat(1, 7, 7)] },
+      { environmentId: cups, stats: [stat(1, 3, 2), stat(2, 9, 9)] },
+    ]);
+    expect(filled.map(({ additions, deletions }) => [additions, deletions])).toEqual([
+      [3, 2],
+      [4, 1],
+    ]);
+    expect(filled[1]).toBe(rows[1]);
   });
 });

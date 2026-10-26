@@ -3,6 +3,7 @@ import {
   ProjectId,
   resolvePullRequestAuthorFilter,
   type EnvironmentId,
+  type PullRequestDiffStat,
   type PullRequestListEntry,
   type PullRequestListInput,
   type PullRequestListResult,
@@ -44,6 +45,38 @@ export type EnvironmentPullRequestListEntry = PullRequestListEntry & {
 
 export const scopedPullRequestListKey = (entry: EnvironmentPullRequestListEntry) =>
   `${entry.environmentId}:${pullRequestListKey(entry)}`;
+
+export const pullRequestStatKey = (
+  row: Pick<PullRequestDiffStat, "projectId" | "repository" | "number">,
+) => `${row.projectId}:${row.repository}:${row.number}`;
+
+/**
+ * Fills rows that have no diff stat yet from the stats answers on screen. Returns `entries`
+ * itself when no row changes, so the list keeps its identity across renders.
+ */
+export function withShownPullRequestStats(
+  entries: readonly EnvironmentPullRequestListEntry[],
+  answers: readonly {
+    readonly environmentId: EnvironmentId;
+    readonly stats: readonly PullRequestDiffStat[];
+  }[],
+): readonly EnvironmentPullRequestListEntry[] {
+  const shown = new Map(
+    answers.flatMap(({ environmentId, stats }) =>
+      stats.map((row) => [`${environmentId}:${pullRequestStatKey(row)}`, row] as const),
+    ),
+  );
+  if (!shown.size) return entries;
+  let changed = false;
+  const next = entries.map((entry) => {
+    const stat = shown.get(`${entry.environmentId}:${pullRequestStatKey(entry)}`);
+    if (!stat || entry.additions + entry.deletions !== 0) return entry;
+    if (stat.additions + stat.deletions === 0) return entry;
+    changed = true;
+    return { ...entry, additions: stat.additions, deletions: stat.deletions };
+  });
+  return changed ? next : entries;
+}
 
 export function pullRequestListRowsAreEqual(
   previous: EnvironmentPullRequestListEntry,
