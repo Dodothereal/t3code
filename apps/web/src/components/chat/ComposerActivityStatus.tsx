@@ -1,4 +1,4 @@
-import { Spinner } from "~/components/ui/spinner";
+import { RefreshCwIcon } from "lucide-react";
 
 import { threadSyncLabel, type ThreadSyncPhase } from "../../threadSync";
 import { ComposerBanner } from "./ComposerBanner";
@@ -7,7 +7,7 @@ export function ComposerActivityRow({ phase }: { readonly phase: ThreadSyncPhase
   return (
     <ComposerBanner.Row>
       <ComposerBanner.Icon>
-        <Spinner />
+        <RefreshCwIcon />
       </ComposerBanner.Icon>
       <ComposerBanner.Content>
         <span

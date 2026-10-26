@@ -322,10 +322,11 @@ export function QueuedRunsControl({
                       size="icon-xs"
                       variant="ghost-muted"
                       aria-label={`Reorder queued message ${position + 1} of ${items.length} (drag, or press the arrow keys)`}
-                      className="group/grip cursor-grab active:cursor-grabbing disabled:cursor-default"
-                      disabled={busyRunId !== null}
+                      className="group/grip cursor-grab active:cursor-grabbing"
+                      // Not `disabled`: that drops keyboard focus mid-move and breaks repeated arrow presses.
+                      aria-disabled={busyRunId !== null || undefined}
                       onPointerDown={() => {
-                        dragArmedRunIdRef.current = rowRunId;
+                        if (busyRunId === null) dragArmedRunIdRef.current = rowRunId;
                       }}
                       onKeyDown={(event) => {
                         if (busyRunId !== null) return;
