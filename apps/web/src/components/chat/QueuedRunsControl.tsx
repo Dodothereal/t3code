@@ -266,7 +266,7 @@ export function QueuedRunsControl({
                 key={item.key}
                 aria-current={isEditing ? "true" : undefined}
                 className={cn(
-                  "group/queued relative rounded-md transition-opacity duration-150 ease-out starting:opacity-0 motion-reduce:transition-none",
+                  "group/queued relative rounded-xl transition-opacity duration-150 ease-out starting:opacity-0 motion-reduce:transition-none",
                   isEditing && "bg-accent text-accent-foreground",
                   dragState !== null && dragState.runId === item.runId && "opacity-50",
                 )}

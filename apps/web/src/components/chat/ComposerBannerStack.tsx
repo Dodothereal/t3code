@@ -182,7 +182,9 @@ function ShelfRow({ item }: { readonly item: ComposerBannerStackItem }) {
         <ComposerBanner.Content className="whitespace-nowrap">
           <NoticeText
             detailsLabel={
-              typeof item.title === "string" ? `Show details: ${item.title}` : "Show title details"
+              typeof item.title === "string"
+                ? `Show full title: ${item.title}`
+                : "Show title details"
             }
             className="min-w-0 truncate font-medium leading-7 sm:leading-6"
           >
