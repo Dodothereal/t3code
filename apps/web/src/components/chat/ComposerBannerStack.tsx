@@ -55,7 +55,11 @@ export function ComposerBannerStack({ items, activity, queue }: ComposerBannerSt
         aria-label="Thread status"
         density="comfortable"
         data-chat-composer-collapsed-controls="true"
-        className="[&>[data-composer-shelf-band]:not(:empty)~[data-composer-shelf-band]:not(:empty)]:border-t"
+        className={cn(
+          "[&>[data-composer-shelf-band]:not(:empty)~[data-composer-shelf-band]:not(:empty)]:border-t",
+          // The first row's corner button nests inside the shelf's top-right radius.
+          "[&>[data-composer-shelf-band]:nth-child(1_of_:not(:empty))>[data-composer-shelf-row]:first-child>[data-composer-banner-row]>[data-slot=composer-banner-actions]>[data-slot=button]:last-child]:rounded-se-xl",
+        )}
       >
         {bands.map((band) => (
           <ShelfBand key={band.group} name={band.group}>
@@ -75,7 +79,7 @@ function ShelfBand({ name, children }: { readonly name: string; readonly childre
   return (
     <div
       data-composer-shelf-band={name}
-      className="-mx-1 border-(--chat-composer-attached-outline) px-1 py-0.5 empty:hidden"
+      className="-mx-1 border-(--chat-composer-attached-outline) px-1 py-0.5 empty:hidden *:transition-opacity *:duration-150 *:ease-out *:starting:opacity-0 motion-reduce:*:transition-none"
     >
       {children}
     </div>
@@ -186,7 +190,9 @@ function ShelfRow({ item }: { readonly item: ComposerBannerStackItem }) {
             <NoticeText
               detailsLabel="Show notice details"
               className={cn(
-                "w-0 min-w-0 grow truncate text-muted-foreground",
+                "w-0 min-w-0 grow truncate",
+                // Muted text falls under 4.5:1 on the light problem tints.
+                problem ? "text-foreground/65" : "text-muted-foreground",
                 // What the agent is working toward stays visible; notices keep only their title.
                 item.group !== "activity" && "@max-[400px]:sr-only",
               )}

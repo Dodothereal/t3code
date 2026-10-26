@@ -321,7 +321,7 @@ export function QueuedRunsControl({
                     <Button
                       size="icon-xs"
                       variant="ghost-muted"
-                      aria-label="Reorder queued message (drag, or press the arrow keys)"
+                      aria-label={`Reorder queued message ${position + 1} of ${items.length} (drag, or press the arrow keys)`}
                       className="group/grip cursor-grab active:cursor-grabbing disabled:cursor-default"
                       disabled={busyRunId !== null}
                       onPointerDown={() => {
