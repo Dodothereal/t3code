@@ -58,6 +58,28 @@ export function goalBannerItem(input: {
 }): ComposerBannerStackItem {
   const { isWorking, onSendCommand } = input;
   const presentation = presentProviderGoal(input.goal, isWorking);
+  // The token count opens the full usage, unless the full usage is all there is.
+  const usageLabel =
+    !isWorking || presentation.usage === null ? null : presentation.tokens === null ||
+      presentation.tokens === presentation.usage ? (
+      <span className="mx-2 whitespace-nowrap text-muted-foreground tabular-nums">
+        {presentation.usage}
+      </span>
+    ) : (
+      <Popover>
+        <PopoverTrigger
+          openOnHover
+          render={<InlineButton tone="muted" />}
+          className="mx-2"
+          aria-label={`Goal usage: ${presentation.usage}`}
+        >
+          <span className="font-normal tabular-nums">{presentation.tokens}</span>
+        </PopoverTrigger>
+        <PopoverPopup tooltipStyle side="top">
+          {presentation.usage}
+        </PopoverPopup>
+      </Popover>
+    );
   return {
     id: `goal:${input.threadId}`,
     variant: "default",
@@ -71,25 +93,9 @@ export function goalBannerItem(input: {
         ? presentation.objective
         : `${presentation.objective} · ${presentation.usage}`,
     actions:
-      isWorking && presentation.usage === null ? undefined : (
+      usageLabel === null && isWorking ? undefined : (
         <>
-          {isWorking && presentation.usage !== null ? (
-            <Popover>
-              <PopoverTrigger
-                openOnHover
-                render={<InlineButton tone="muted" />}
-                className="mx-2"
-                aria-label={`Goal usage: ${presentation.usage}`}
-              >
-                <span className="font-normal tabular-nums">
-                  {presentation.tokens ?? presentation.usage}
-                </span>
-              </PopoverTrigger>
-              <PopoverPopup tooltipStyle side="top">
-                {presentation.usage}
-              </PopoverPopup>
-            </Popover>
-          ) : null}
+          {usageLabel}
           {!isWorking && presentation.canResume ? (
             <Button
               size="xs"
