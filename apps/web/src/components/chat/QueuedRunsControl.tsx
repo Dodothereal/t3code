@@ -335,17 +335,19 @@ export function QueuedRunsControl({
                         }
                         if (event.key === "ArrowDown" && rowServerIndex < queued.length - 1) {
                           event.preventDefault();
+                          // Moving into the collapsed rows would unmount the focused grip.
+                          if (rowServerIndex + 1 >= visibleItems.length) setShowAll(true);
                           void move(rowRunId, queued[rowServerIndex + 2]?.run.id ?? null);
                         }
                       }}
                     >
-                      <span className="font-medium tabular-nums group-hover/queued:hidden group-focus-visible/grip:hidden">
+                      <span className="text-xs font-medium tabular-nums group-hover/queued:hidden group-focus-visible/grip:hidden">
                         {position + 1}
                       </span>
                       <GripVerticalIcon className="hidden group-hover/queued:block group-focus-visible/grip:block" />
                     </Button>
                   ) : (
-                    <span className="font-medium text-muted-foreground tabular-nums">
+                    <span className="text-xs font-medium text-muted-foreground tabular-nums">
                       {position + 1}
                     </span>
                   )}

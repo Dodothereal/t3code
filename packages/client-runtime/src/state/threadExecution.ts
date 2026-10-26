@@ -378,8 +378,8 @@ const PROVIDER_GOAL_TITLES: Record<OrchestrationV2ProviderGoal["status"], string
 
 function formatGoalTokens(tokens: number): string {
   if (tokens < 1_000) return `${tokens}`;
-  if (tokens < 1_000_000) return `${Math.round(tokens / 1_000)}k`;
-  return `${(tokens / 1_000_000).toFixed(1).replace(/\.0$/, "")}m`;
+  if (tokens < 1_000_000) return `${Math.round(tokens / 1_000)}K`;
+  return `${(tokens / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
 }
 
 export function presentProviderGoal(

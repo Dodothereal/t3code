@@ -284,6 +284,17 @@ export function useTimelineFollow(input: TimelineFollowInput) {
     });
   };
   const scrollToEndStable = useStableCallback(scrollToEnd);
+  // The list does not follow footer layout, so the resting composer cannot scroll it. Growth
+  // above the composer (a new notice, opened tasks) would cover the last rows instead.
+  const followedInsetRef = useRef(composerTimelineInset);
+  // oxlint-disable-next-line t3code/react-effect-budget -- scrolls the list after its bottom inset grows
+  useLayoutEffect(() => {
+    const grew = composerTimelineInset > followedInsetRef.current;
+    followedInsetRef.current = composerTimelineInset;
+    if (grew && timelineScrollModeRef.current === "following-end" && isAtEndRef.current) {
+      scrollToEndStable();
+    }
+  }, [composerTimelineInset, scrollToEndStable]);
   useEffect(() => {
     const composer = composerRef;
     let removeListeners: (() => void) | null = null;
