@@ -41,6 +41,7 @@ const GROUPS = ["environment", "attention", "activity"] as const;
  * behind another card, nothing floating over the transcript.
  */
 export function ComposerBannerStack({ items, activity, queue }: ComposerBannerStackProps) {
+  if (items.length === 0 && !activity && !queue) return null;
   const bands = GROUPS.map((group) => ({
     group,
     items: items.filter((item) => (item.group ?? "attention") === group),
@@ -48,7 +49,12 @@ export function ComposerBannerStack({ items, activity, queue }: ComposerBannerSt
   return (
     <ComposerBanner.Attachment
       data-composer-banner-stack="true"
-      className="not-has-[[data-composer-shelf-band]:not(:empty)]:hidden"
+      className={cn(
+        "not-has-[[data-composer-shelf-band]:not(:empty)]:hidden",
+        // A hidden shelf must not join the next attachment to it (the queue can render nothing).
+        "not-has-[[data-composer-shelf-band]:not(:empty)]:[&+[data-slot=composer-banner-attachment]_[data-composer-banner-surface=attached]]:before:rounded-t-2xl",
+        "not-has-[[data-composer-shelf-band]:not(:empty)]:[&+[data-slot=composer-banner-attachment]_[data-composer-banner-surface=attached]]:before:border-t",
+      )}
     >
       <ComposerBanner.Root
         role="region"
