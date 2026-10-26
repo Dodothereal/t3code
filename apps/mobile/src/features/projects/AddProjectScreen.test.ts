@@ -4,6 +4,7 @@ import * as NodeOS from "node:os";
 import * as NodePath from "node:path";
 import * as NodeModule from "node:module";
 import type { EnvironmentConnectionPhase } from "@t3tools/client-runtime/connection";
+import { workspaceDetailRouter } from "../workspace/workspace-detail-selection";
 import type { NavigationState } from "@react-navigation/native";
 import { AuthOrchestrationOperateScope, AuthSourceControlWriteScope } from "@t3tools/contracts";
 import * as Cause from "effect/Cause";
@@ -13,7 +14,6 @@ import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 const state = vi.hoisted(() => ({
-  realHooks: false,
   scopes: new Set<string>(),
   baseDirectory: "",
   projects: [] as string[],
@@ -48,20 +48,11 @@ function loadRouters() {
   };
 }
 
-vi.mock("react", async (importOriginal) => {
-  const react = await importOriginal<typeof import("react")>();
+vi.mock("../workspace/useSelectWorkspaceDetail", async () => {
+  const { selectWorkspaceDetail } = await import("../workspace/workspace-detail-selection");
   return {
-    ...react,
-    useCallback: (callback: unknown) => callback,
-    useMemo: (factory: () => unknown) => factory(),
-    useState: (initial: unknown) =>
-      state.realHooks
-        ? react.useState(initial)
-        : [typeof initial === "function" ? initial() : initial, () => {}],
-    useRef: (current: unknown) => (state.realHooks ? react.useRef(current) : { current }),
-    useEffect: (...args: Parameters<typeof react.useEffect>) => {
-      if (state.realHooks) react.useEffect(...args);
-    },
+    useSelectWorkspaceDetail: () => (detail: Parameters<typeof selectWorkspaceDetail>[0]) =>
+      state.dispatch(selectWorkspaceDetail(detail)),
   };
 });
 vi.mock("../../native/StackHeader", () => ({
@@ -223,13 +214,32 @@ function findAction(
   return findAction(node.props.children, label, includeDisabled);
 }
 
+const mountedRoots: ReturnType<typeof createRoot>[] = [];
+afterEach(() => {
+  for (const root of mountedRoots.splice(0)) act(() => root.unmount());
+});
+function renderScreen(render: () => ReactNode) {
+  (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+  const root = createRoot(document.createElement("div"));
+  mountedRoots.push(root);
+  let screen: ReactNode;
+  function Observer() {
+    screen = render();
+    return null;
+  }
+  act(() => root.render(createElement(Observer)));
+  return screen;
+}
+
 function cloneAction() {
   const action = findAction(
-    AddProjectDestinationScreen({
-      environmentId: "environment",
-      remoteUrl: "https://example.com/repo.git",
-      repositoryName: "repo",
-    }),
+    renderScreen(() =>
+      AddProjectDestinationScreen({
+        environmentId: "environment",
+        remoteUrl: "https://example.com/repo.git",
+        repositoryName: "repo",
+      }),
+    ),
     "Clone project",
     true,
   );
@@ -279,7 +289,8 @@ function mountProjectFlow(
   screenName = "AddProjectLocal",
 ) {
   const { StackRouter, StackActions, CommonActions } = loadRouters();
-  const router = StackRouter({});
+  const base = StackRouter({});
+  const router = { ...base, ...workspaceDetailRouter(base) };
   const options = {
     routeNames: [
       "Home",
@@ -317,7 +328,11 @@ function mountProjectFlow(
   }
   state.navigationState = current;
   state.dispatch.mockImplementation((action) =>
-    apply(action.type === "PUSH" ? action : CommonActions.reset(action)),
+    apply(
+      action.type === "PUSH" || action.type === "SELECT_WORKSPACE_DETAIL"
+        ? action
+        : CommonActions.reset(action),
+    ),
   );
   return {
     home,
@@ -333,7 +348,6 @@ function mountProjectFlow(
 
 describe("add project source environment", () => {
   it("blocks local add on a requested unavailable host until reconnect or manual choice", async () => {
-    state.realHooks = true;
     state.scopes = new Set([AuthOrchestrationOperateScope]);
     state.dispatch.mockReset();
     state.environments = [
@@ -378,14 +392,12 @@ describe("add project source environment", () => {
       });
     } finally {
       await act(() => root.unmount());
-      state.realHooks = false;
       state.connectionStates = {};
       state.environments = [{ environmentId: "environment", environmentLabel: "Environment" }];
     }
   });
 
   it("keeps a manual host selection when the requested host finishes connecting", async () => {
-    state.realHooks = true;
     state.scopes = new Set([AuthOrchestrationOperateScope]);
     state.dispatch.mockReset();
     const navigation = mountProjectFlow(false, true, false, "AddProject");
@@ -419,14 +431,12 @@ describe("add project source environment", () => {
       });
     } finally {
       await act(() => root.unmount());
-      state.realHooks = false;
       state.connectionStates = {};
       state.environments = [{ environmentId: "environment", environmentLabel: "Environment" }];
     }
   });
 
   it("follows warm environment requests while preserving manual selection between requests", async () => {
-    state.realHooks = true;
     state.scopes = new Set([AuthOrchestrationOperateScope]);
     state.dispatch.mockReset();
     const navigation = mountProjectFlow(false, true, false, "AddProject");
@@ -478,7 +488,6 @@ describe("add project source environment", () => {
       openLocalFolder("another-environment");
     } finally {
       await act(() => root.unmount());
-      state.realHooks = false;
       state.environments = [{ environmentId: "environment", environmentLabel: "Environment" }];
     }
   });
@@ -498,7 +507,7 @@ describe("local project navigation", () => {
     state.createResult = created.promise;
     state.waitForProject.mockReturnValue(projected.promise);
     const submit = findAction(
-      AddProjectLocalFolderScreen({ environmentId: "environment" }),
+      renderScreen(() => AddProjectLocalFolderScreen({ environmentId: "environment" })),
       "Add project",
     );
     if (!submit) throw new Error("Add project action missing");
@@ -580,7 +589,6 @@ describe("local project navigation", () => {
 
   it("does not redirect a reopened flow when an earlier new project finishes", async () => {
     const { projected } = setup();
-    state.realHooks = true;
     state.newProjectsRoot = "/projects";
     const created = Promise.withResolvers<unknown>();
     const waitingForProject = Promise.withResolvers<void>();
@@ -642,7 +650,6 @@ describe("local project navigation", () => {
       expect(state.dispatch).not.toHaveBeenCalled();
     } finally {
       await act(() => root.unmount());
-      state.realHooks = false;
       state.newProjectsRoot = null;
       state.createNewResult = null;
     }
@@ -653,12 +660,11 @@ describe("local project navigation", () => {
     { origin: "NewTaskProject", withDraft: false, withChooser: true },
     { origin: "AddProject", withDraft: false, withChooser: false },
   ])(
-    "waits for projection, reuses $origin and removes the completed flow",
+    "waits for projection then selects the draft from $origin",
     async ({ withDraft, withChooser }) => {
       const { created, projected, submit } = setup();
       const navigation = mountProjectFlow(withDraft, withChooser, true);
       const before = navigation.getState();
-      const retainedKey = withDraft ? navigation.draftKey : navigation.flowRoutes[0]!.key;
       const submission = submit();
       created.resolve(AsyncResult.success(undefined));
       await created.promise;
@@ -666,22 +672,16 @@ describe("local project navigation", () => {
       expect(navigation.getState()).toBe(before);
       projected.resolve({ environmentId: "environment", id: "project" });
       await submission;
-      expect(navigation.getState().routes).toEqual([
-        ...navigation.underlyingRoutes,
-        {
-          key: retainedKey,
-          name: "Thread",
-          params: {
-            draft: {
-              environmentId: "environment",
-              projectId: "project",
-              title: "t3-mobile-audit-fixture",
-            },
-          },
+      expect(navigation.getState().routes.map((route) => route.name)).toEqual(["Home", "Thread"]);
+      expect(navigation.getState().routes[1]?.params).toEqual({
+        draft: {
+          environmentId: "environment",
+          projectId: "project",
+          title: "t3-mobile-audit-fixture",
         },
-      ]);
+      });
       navigation.back();
-      expect(navigation.getState().routes).toEqual(navigation.underlyingRoutes);
+      expect(navigation.getState().routes).toEqual([navigation.home]);
     },
   );
 });

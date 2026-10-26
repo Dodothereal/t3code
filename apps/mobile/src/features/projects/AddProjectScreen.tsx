@@ -1,3 +1,4 @@
+import { useSelectWorkspaceDetail } from "../workspace/useSelectWorkspaceDetail";
 import * as Dialog from "../../components/ui/Dialog";
 import { AppActivityIndicator } from "../../components/ui/AppActivityIndicator";
 import { NavigationRow } from "../../components/ui/NavigationRow";
@@ -666,44 +667,30 @@ function getActiveRoute(navigation: {
   return state?.routes[state.index];
 }
 
-function openNewTaskDraft(
-  navigation: {
-    dispatch: (action: ReturnType<typeof CommonActions.reset>) => void;
-    getState: () => NavigationState<ParamListBase> | undefined;
-  },
-  params: {
-    environmentId: EnvironmentId;
-    projectId: ProjectId;
-    title: string;
-    cloning?: "1";
-    draftId?: string;
-  },
-  originRoute: NavigationState<ParamListBase>["routes"][number] | undefined,
-) {
-  const state = navigation.getState();
-  // Warm links can replace route params without changing the native controller key.
-  const activeRoute = state?.routes[state.index];
-  if (
-    !state ||
-    !originRoute ||
-    activeRoute?.key !== originRoute.key ||
-    activeRoute.name !== originRoute.name ||
-    activeRoute.params !== originRoute.params
-  )
-    return;
-  const activeRoutes = state.routes.slice(0, state.index + 1);
-  const threadIndex = activeRoutes.findLastIndex((route) => route.name === "Thread");
-  const flowIndex = activeRoutes.findIndex(
-    (route) => route.name === "NewTaskProject" || route.name.startsWith("AddProject"),
-  );
-  const startIndex = threadIndex >= 0 ? threadIndex : flowIndex >= 0 ? flowIndex : state.index;
-  // Native screen identity is the route key, even when its name changes. Reuse
-  // the draft or first flow controller so completion only pops its children.
-  const routes = [
-    ...activeRoutes.slice(0, startIndex),
-    { key: activeRoutes[startIndex]!.key, name: "Thread", params: { draft: params } },
-  ];
-  navigation.dispatch(CommonActions.reset({ ...state, index: routes.length - 1, routes }));
+function useOpenNewTaskDraft() {
+  const navigation = useNavigation();
+  const selectDetail = useSelectWorkspaceDetail();
+  return (
+    params: {
+      environmentId: EnvironmentId;
+      projectId: ProjectId;
+      title: string;
+      cloning?: "1";
+      draftId?: string;
+    },
+    originRoute: NavigationState<ParamListBase>["routes"][number] | undefined,
+  ) => {
+    const activeRoute = getActiveRoute(navigation);
+    // A warm link can change the task without replacing its native route key.
+    if (
+      !originRoute ||
+      activeRoute?.key !== originRoute.key ||
+      activeRoute.name !== originRoute.name ||
+      activeRoute.params !== originRoute.params
+    )
+      return;
+    selectDetail({ name: "Thread", params: { draft: params } });
+  };
 }
 
 async function draftWithPrompt(
@@ -718,6 +705,7 @@ async function draftWithPrompt(
 }
 
 function useCreateProject(environment: EnvironmentOption | null) {
+  const openNewTaskDraft = useOpenNewTaskDraft();
   const navigation = useNavigation();
   const createProject = useAtomCommand(projectEnvironment.create, { reportFailure: false });
   const projects = useProjects();
@@ -743,7 +731,6 @@ function useCreateProject(environment: EnvironmentOption | null) {
     if (existing) {
       Dialog.alert("Project already exists", existing.title);
       openNewTaskDraft(
-        navigation,
         {
           environmentId: existing.environmentId,
           projectId: existing.id,
@@ -781,7 +768,6 @@ function useCreateProject(environment: EnvironmentOption | null) {
       return result;
     }
     openNewTaskDraft(
-      navigation,
       {
         environmentId: environment.environmentId,
         projectId,
@@ -997,6 +983,7 @@ function FolderBrowser(props: {
 }
 
 export function AddProjectNewScreen(props: { readonly environmentId?: string | string[] }) {
+  const openNewTaskDraft = useOpenNewTaskDraft();
   const navigation = useNavigation();
   const environmentOptions = useEnvironmentOptions().filter(
     (option) => option.newProjectsRoot !== null,
@@ -1123,7 +1110,6 @@ export function AddProjectNewScreen(props: { readonly environmentId?: string | s
       return;
     }
     openNewTaskDraft(
-      navigation,
       {
         environmentId: environment.environmentId,
         projectId,
@@ -1321,6 +1307,7 @@ export function AddProjectDestinationScreen(props: {
   readonly repositoryName?: string | string[];
   readonly prompt?: string | string[];
 }) {
+  const openNewTaskDraft = useOpenNewTaskDraft();
   const cloneRepository = useAtomCommand(sourceControlEnvironment.cloneRepository, {
     reportFailure: false,
   });
@@ -1401,7 +1388,6 @@ export function AddProjectDestinationScreen(props: {
           );
         } else {
           openNewTaskDraft(
-            navigation,
             {
               environmentId: environment.environmentId,
               projectId,

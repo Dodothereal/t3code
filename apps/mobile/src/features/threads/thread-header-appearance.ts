@@ -9,8 +9,6 @@ export function threadHeaderAppearance(
 ): AppNativeStackNavigationOptions {
   return {
     headerShown: true,
-    // A completed project flow can reuse the chooser's route key and dynamic options.
-    headerSearchBarOptions: undefined,
     headerTransparent: usesNativeHeaderGlass,
     headerStyle: usesNativeHeaderGlass ? { backgroundColor: "transparent" } : undefined,
     headerShadowVisible: false,
