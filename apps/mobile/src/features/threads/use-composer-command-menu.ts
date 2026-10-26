@@ -254,10 +254,17 @@ export function useComposerCommandMenu({
         })
       : idleWorkspaceSnapshotRefreshAtom,
   );
-  // Selection changes on every keystroke, which is when a stale snapshot is rechecked.
+  // Every draft change rechecks a stale snapshot, including drafts written by
+  // another surface (a prompt link) that never move the editor selection.
+  useEffect(() => {
+    refreshWorkspaceSnapshot();
+  }, [
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- Draft changes are the recheck signal.
+    draftMessage,
+    refreshWorkspaceSnapshot,
+  ]);
   const onSelectionChange = (nextSelection: ComposerEditorSelection) => {
     setSelection(nextSelection);
-    refreshWorkspaceSnapshot();
   };
 
   const trigger = (() => {
