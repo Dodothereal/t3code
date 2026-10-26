@@ -167,6 +167,33 @@ describe("client settings hydration", () => {
 });
 
 describe("persistClientSettingsPatch", () => {
+  it("remembers enabling and disabling composer statistics across reloads", async () => {
+    let durableSettings: ClientSettings | null = null;
+    persistenceMocks.getClientSettings.mockImplementation(async () => durableSettings);
+    persistenceMocks.setClientSettings.mockImplementation(async (settings) => {
+      durableSettings = settings;
+    });
+
+    await ensureClientSettingsHydrated();
+    expect(getClientSettings().composerStatsEnabled).toBe(false);
+
+    await persistClientSettingsPatch({ composerStatsEnabled: true, timestampFormat: "12-hour" });
+    __resetClientSettingsPersistenceForTests();
+    await ensureClientSettingsHydrated();
+    expect(getClientSettings()).toMatchObject({
+      composerStatsEnabled: true,
+      timestampFormat: "12-hour",
+    });
+
+    await persistClientSettingsPatch({ composerStatsEnabled: false });
+    __resetClientSettingsPersistenceForTests();
+    await ensureClientSettingsHydrated();
+    expect(getClientSettings()).toMatchObject({
+      composerStatsEnabled: false,
+      timestampFormat: "12-hour",
+    });
+  });
+
   it("waits for settings writes in request order", async () => {
     __setClientSettingsForTests(DEFAULT_CLIENT_SETTINGS);
     let finishFirst!: () => void;

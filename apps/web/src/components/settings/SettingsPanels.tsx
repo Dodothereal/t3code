@@ -481,6 +481,9 @@ export function useSettingsRestore(onRestored?: () => void) {
     ...(settings.composerRichTextEnabled !== DEFAULT_UNIFIED_SETTINGS.composerRichTextEnabled
       ? ["Rich text composer"]
       : []),
+    ...(settings.composerStatsEnabled !== DEFAULT_UNIFIED_SETTINGS.composerStatsEnabled
+      ? ["Show chat statistics"]
+      : []),
     ...(settings.sendShortcut !== DEFAULT_UNIFIED_SETTINGS.sendShortcut ? ["Send shortcut"] : []),
     ...(settings.followUpBehavior !== DEFAULT_UNIFIED_SETTINGS.followUpBehavior
       ? ["Follow-up behavior"]
@@ -598,6 +601,7 @@ export function useSettingsRestore(onRestored?: () => void) {
       showSkillsInSlashMenu: DEFAULT_UNIFIED_SETTINGS.showSkillsInSlashMenu,
       composerCollapseOnScroll: DEFAULT_UNIFIED_SETTINGS.composerCollapseOnScroll,
       composerRichTextEnabled: DEFAULT_UNIFIED_SETTINGS.composerRichTextEnabled,
+      composerStatsEnabled: DEFAULT_UNIFIED_SETTINGS.composerStatsEnabled,
       sendShortcut: DEFAULT_UNIFIED_SETTINGS.sendShortcut,
       followUpBehavior: DEFAULT_UNIFIED_SETTINGS.followUpBehavior,
       contextWindowMeterEnabled: DEFAULT_UNIFIED_SETTINGS.contextWindowMeterEnabled,
@@ -1398,6 +1402,32 @@ export function GeneralSettingsPanel() {
                 updateSettings({ composerRichTextEnabled: Boolean(checked) })
               }
               aria-label="Rich text composer"
+            />
+          }
+        />
+
+        <SettingsRow
+          {...searchableSetting("composer-statistics")}
+          description="Show a row below the composer with token usage and timing when available."
+          resetAction={
+            settings.composerStatsEnabled !== DEFAULT_UNIFIED_SETTINGS.composerStatsEnabled ? (
+              <SettingResetButton
+                label="chat statistics"
+                onClick={() =>
+                  updateSettings({
+                    composerStatsEnabled: DEFAULT_UNIFIED_SETTINGS.composerStatsEnabled,
+                  })
+                }
+              />
+            ) : null
+          }
+          control={
+            <Switch
+              checked={settings.composerStatsEnabled}
+              onCheckedChange={(checked) =>
+                updateSettings({ composerStatsEnabled: Boolean(checked) })
+              }
+              aria-label="Show chat statistics"
             />
           }
         />
