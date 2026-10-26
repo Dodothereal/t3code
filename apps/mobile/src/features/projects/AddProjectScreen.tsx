@@ -1,3 +1,4 @@
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSelectWorkspaceDetail } from "../workspace/useSelectWorkspaceDetail";
 import * as Dialog from "../../components/ui/Dialog";
 import { AppActivityIndicator } from "../../components/ui/AppActivityIndicator";
@@ -667,7 +668,7 @@ function getActiveRoute(navigation: {
 }
 
 function useOpenNewTaskDraft() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<ReactNavigation.RootParamList>>();
   const selectDetail = useSelectWorkspaceDetail();
   return (
     params: {
@@ -688,6 +689,20 @@ function useOpenNewTaskDraft() {
       activeRoute.params !== originRoute.params
     )
       return;
+    const state = navigation.getState();
+    if (Platform.OS === "ios" && state && !state.routes.some((route) => route.name === "Thread")) {
+      const homeKey = state.routes[0]?.key;
+      // UIKit must finish removing the chooser before a new detail card is inserted.
+      const unsubscribe = navigation.addListener("transitionEnd", (event) => {
+        if (!event.data.closing) return;
+        unsubscribe();
+        const current = navigation.getState();
+        if (current?.index !== 0 || current.routes[0]?.key !== homeKey) return;
+        selectDetail({ name: "Thread", params: { draft: params } });
+      });
+      navigation.dispatch(StackActions.popToTop());
+      return;
+    }
     selectDetail({ name: "Thread", params: { draft: params } });
   };
 }
