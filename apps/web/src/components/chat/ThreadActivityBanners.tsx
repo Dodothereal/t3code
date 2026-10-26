@@ -113,8 +113,8 @@ export function backgroundWorkBannerItem(input: {
     icon: (
       <span
         className={cn(
-          "size-1.5 rounded-full bg-foreground",
-          presentation.waiting && "motion-safe:animate-status-pulse",
+          "size-1.5 rounded-full",
+          presentation.waiting ? "bg-foreground" : "bg-muted-foreground",
         )}
         aria-hidden="true"
       />
