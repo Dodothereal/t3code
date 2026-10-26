@@ -445,7 +445,9 @@ export function QueuedRunsControl({
                             }}
                           >
                             <CornerUpRightIcon />
-                            {workflow?.canSendNow ? "Send now" : "Steer"}
+                            <span className="@max-[480px]:sr-only">
+                              {workflow?.canSendNow ? "Send now" : "Steer"}
+                            </span>
                           </Button>
                         </TooltipTrigger>
                         <TooltipPopup>
